@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+*.pyo
+.env
+*.log
+faiss_index/
+.DS_Store
