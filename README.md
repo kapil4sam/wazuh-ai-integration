@@ -14,10 +14,9 @@ A web-based AI chatbot that queries your Wazuh archive logs for threat hunting. 
 ```
 wazuh-ai-threat-hunter/
 ├── README.md
-├── ollama/
-│   └── threat_hunter.py       # Ollama + FAISS vectorstore approach
-└── openrouter/
-    └── threat_hunter.py       # OpenRouter API approach (direct context injection)
+├── threat_hunter_ollama.py       # Ollama + FAISS vectorstore approach
+└── threat_hunter_openrouter.py       # OpenRouter API approach (direct context injection)
+└── requirements-openrouter.txt
 ```
 
 ---
