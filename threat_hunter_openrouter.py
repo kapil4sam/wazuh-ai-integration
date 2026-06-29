@@ -25,8 +25,8 @@ qa_chain = None
 context = None
 days_range = 7
 
-username="<USERNAME>"
-password="<PASSWORD>"
+username="admin"
+password="admin"
 ssh_username = "<SSH_USERNAME>"
 ssh_password = "<SSH_PASSWORD>"
 remote_host = None
@@ -295,309 +295,157 @@ HTML_PAGE = """
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Wazuh Threat Hunter</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<title>Wazuh Chat Assistant</title>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    font-family: 'Inter', sans-serif;
-    background-color: #212121;
-    color: #ececec;
-    height: 100dvh;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  /* ── Top bar ── */
-  .topbar {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 14px 24px;
-    background: #2a2a2a;
-    border-bottom: 1px solid #333;
-    flex-shrink: 0;
-  }
-  .topbar-icon {
-    width: 32px; height: 32px;
-    background: #10a37f;
-    border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 16px;
-  }
-  .topbar h1 { font-size: 15px; font-weight: 600; color: #ececec; }
-  .topbar-sub { font-size: 12px; color: #8e8ea0; margin-left: auto; }
-  .status-dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: #555; margin-left: 6px; flex-shrink: 0;
-    transition: background 0.3s;
-  }
-  .status-dot.connected { background: #10a37f; }
-
-  /* ── Message area ── */
-  #messages {
-    flex: 1;
-    overflow-y: auto;
-    padding: 24px 0 8px;
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    scroll-behavior: smooth;
-  }
-  #messages::-webkit-scrollbar { width: 6px; }
-  #messages::-webkit-scrollbar-track { background: transparent; }
-  #messages::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
-
-  .row {
-    display: flex;
-    padding: 6px 24px;
-    gap: 14px;
-    align-items: flex-start;
-    max-width: 860px;
-    width: 100%;
-    margin: 0 auto;
-  }
-  .row.user { flex-direction: row-reverse; }
-
-  .avatar {
-    width: 30px; height: 30px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 13px; font-weight: 600; flex-shrink: 0; margin-top: 2px;
-  }
-  .row.bot .avatar  { background: #10a37f; color: #fff; }
-  .row.user .avatar { background: #5b5b5b; color: #fff; }
-
-  .bubble {
-    max-width: 75%;
-    padding: 10px 14px;
-    border-radius: 16px;
-    font-size: 14px;
-    line-height: 1.65;
-    white-space: pre-wrap;
-    word-break: break-word;
-  }
-  .row.bot  .bubble { background: #2a2a2a; color: #ececec; border-top-left-radius: 4px; }
-  .row.user .bubble { background: #10a37f; color: #fff;    border-top-right-radius: 4px; }
-
-  .bubble.thinking {
-    color: #8e8ea0;
-    font-style: italic;
-    background: transparent;
-    padding-left: 0;
-    animation: pulse 1.4s ease-in-out infinite;
-  }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-
-  /* ── Empty state ── */
-  .empty-state {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    color: #555;
-    user-select: none;
-  }
-  .empty-state .icon { font-size: 40px; }
-  .empty-state p { font-size: 14px; }
-
-  /* ── Input area ── */
-  .input-wrap {
-    flex-shrink: 0;
-    padding: 16px 24px 20px;
-    background: #212121;
-  }
-  .input-box {
-    max-width: 860px;
-    margin: 0 auto;
-    display: flex;
-    align-items: flex-end;
-    gap: 8px;
-    background: #2a2a2a;
-    border: 1px solid #444;
-    border-radius: 16px;
-    padding: 10px 12px 10px 16px;
-    transition: border-color 0.2s;
-  }
-  .input-box:focus-within { border-color: #10a37f; }
-
-  textarea {
-    flex: 1;
-    background: transparent;
-    border: none;
-    outline: none;
-    color: #ececec;
-    font-family: inherit;
-    font-size: 14px;
-    line-height: 1.5;
-    resize: none;
-    max-height: 160px;
-    overflow-y: auto;
-    padding: 2px 0;
-  }
-  textarea::placeholder { color: #666; }
-  textarea::-webkit-scrollbar { width: 4px; }
-  textarea::-webkit-scrollbar-thumb { background: #444; border-radius: 2px; }
-
-  .send-btn {
-    width: 34px; height: 34px; flex-shrink: 0;
-    background: #10a37f;
-    border: none; border-radius: 10px;
-    color: #fff; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    transition: background 0.2s, opacity 0.2s;
-  }
-  .send-btn:hover { background: #0d8f6f; }
-  .send-btn:disabled { background: #333; opacity: 0.5; cursor: default; }
-  .send-btn svg { width: 16px; height: 16px; }
-
-  .input-hint { text-align: center; font-size: 11px; color: #555; margin-top: 8px; max-width: 860px; margin-inline: auto; }
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #1e1e1e;
+        color: white;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
+    .chat-container {
+        display: flex;
+        flex-direction: column;
+        height: 90vh;
+        width: 600px;
+        max-width: 90vw;
+        border: 1px solid #3595F9;
+        border-radius: 8px;
+        background-color: #252931;
+        box-shadow: 0 0 10px #3595F9aa;
+    }
+    .messages {
+        flex-grow: 1;
+        overflow-y: auto;
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+    }
+    .message {
+        max-width: 70%;
+        margin: 5px 0;
+        padding: 12px 16px;
+        border-radius: 15px;
+        word-wrap: break-word;
+        white-space: pre-wrap;
+        line-height: 1.4;
+    }
+    .message.user {
+        background-color: #3595F9;
+        align-self: flex-start;
+        color: white;
+        border-bottom-left-radius: 0;
+    }
+    .message.bot {
+        background-color: #2c2f38;
+        align-self: flex-end;
+        color: #ddd;
+        border-bottom-right-radius: 0;
+    }
+    .input-container {
+        display: flex;
+        padding: 10px 15px;
+        background-color: #1e1e1e;
+        border-top: 1px solid #3595F9;
+        border-bottom-left-radius: 8px;
+        border-bottom-right-radius: 8px;
+    }
+    input[type="text"] {
+        flex-grow: 1;
+        padding: 12px 15px;
+        border: none;
+        border-radius: 25px;
+        background-color: #2c2f38;
+        color: white;
+        font-size: 16px;
+        outline: none;
+    }
+    button {
+        margin-left: 10px;
+        padding: 12px 20px;
+        background-color: #3595F9;
+        border: none;
+        border-radius: 25px;
+        color: white;
+        font-weight: bold;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background-color 0.2s ease-in-out;
+    }
+    button:hover {
+        background-color: #1c6dd0;
+    }
 </style>
 </head>
 <body>
-
-<div class="topbar">
-  <div class="topbar-icon">🛡️</div>
-  <h1>Wazuh Threat Hunter</h1>
-  <span class="topbar-sub">Powered by OpenRouter</span>
-  <div class="status-dot" id="status-dot"></div>
-</div>
-
-<div id="messages">
-  <div class="empty-state" id="empty-state">
-    <div class="icon">🔍</div>
-    <p>Ask anything about your Wazuh logs. Type <strong>/help</strong> for commands.</p>
-  </div>
-</div>
-
-<div class="input-wrap">
-  <div class="input-box">
-    <textarea id="user-input" rows="1" placeholder="Ask about threats, anomalies, or type /help…"></textarea>
-    <button class="send-btn" id="send-btn" onclick="sendMessage()" disabled title="Send">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="22" y1="2" x2="11" y2="13"></line>
-        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-      </svg>
-    </button>
-  </div>
-  <div class="input-hint">Enter to send &nbsp;·&nbsp; Shift+Enter for new line</div>
+<div class="chat-container">
+    <div class="messages" id="messages"></div>
+    <div class="input-container">
+        <input type="text" id="user-input" placeholder="Type your message or /help to print the help menu..." autocomplete="off" />
+        <button onclick="sendMessage()">Send</button>
+    </div>
 </div>
 
 <script>
-  const messagesDiv  = document.getElementById('messages');
-  const userInput    = document.getElementById('user-input');
-  const sendBtn      = document.getElementById('send-btn');
-  const statusDot    = document.getElementById('status-dot');
-  const emptyState   = document.getElementById('empty-state');
+    const messagesDiv = document.getElementById('messages');
+    const userInput = document.getElementById('user-input');
 
-  let awaitingReply = false;
-  let thinkingRow   = null;
+    const socket = new WebSocket(`ws://${window.location.host}/ws/chat`);
 
-  // ── Auto-resize textarea ──
-  userInput.addEventListener('input', () => {
-    userInput.style.height = 'auto';
-    userInput.style.height = Math.min(userInput.scrollHeight, 160) + 'px';
-    sendBtn.disabled = !userInput.value.trim() || awaitingReply;
-  });
+    socket.onopen = () => {
+        console.log("✅ WebSocket connected");
+    };
 
-  // ── WebSocket ──
-  const socket = new WebSocket(`ws://${window.location.host}/ws/chat`);
+    socket.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('message', data.role);
+        messageDiv.textContent = data.message;
+        messagesDiv.appendChild(messageDiv);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    };
 
-  socket.onopen = () => {
-    statusDot.classList.add('connected');
-    sendBtn.disabled = !userInput.value.trim();
-  };
+    socket.onclose = () => {
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('message', 'bot');
+        messageDiv.textContent = '⚠️ Connection closed.';
+        messagesDiv.appendChild(messageDiv);
+    };
 
-  socket.onmessage = (event) => {
-    removeThinking();
-    const data = JSON.parse(event.data);
-    appendMessage(data.role, data.message);
-    awaitingReply = false;
-    sendBtn.disabled = !userInput.value.trim();
-  };
+    socket.onerror = (error) => {
+        console.error("WebSocket error:", error);
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('message', 'bot');
+        messageDiv.textContent = '⚠️ WebSocket error.';
+        messagesDiv.appendChild(messageDiv);
+    };
 
-  socket.onclose = () => {
-    statusDot.classList.remove('connected');
-    removeThinking();
-    appendMessage('bot', '⚠️ Connection closed.');
-    awaitingReply = false;
-    sendBtn.disabled = true;
-  };
+    function sendMessage() {
+        const message = userInput.value.trim();
+        if (message && socket.readyState === WebSocket.OPEN) {
+            // Display user message
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', 'user');
+            messageDiv.textContent = message;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
 
-  socket.onerror = () => {
-    removeThinking();
-    appendMessage('bot', '⚠️ WebSocket error.');
-    awaitingReply = false;
-  };
-
-  // ── Helpers ──
-  function appendMessage(role, text) {
-    if (emptyState) emptyState.remove();
-
-    const row    = document.createElement('div');
-    row.className = 'row ' + role;
-
-    const avatar = document.createElement('div');
-    avatar.className = 'avatar';
-    avatar.textContent = role === 'bot' ? 'W' : 'U';
-
-    const bubble = document.createElement('div');
-    bubble.className = 'bubble';
-    bubble.textContent = text;
-
-    row.appendChild(avatar);
-    row.appendChild(bubble);
-    messagesDiv.appendChild(row);
-    messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    return row;
-  }
-
-  function showThinking() {
-    if (emptyState) emptyState.remove();
-    const row    = document.createElement('div');
-    row.className = 'row bot';
-    const avatar = document.createElement('div');
-    avatar.className = 'avatar';
-    avatar.textContent = 'W';
-    const bubble = document.createElement('div');
-    bubble.className = 'bubble thinking';
-    bubble.textContent = 'Analyzing logs…';
-    row.appendChild(avatar);
-    row.appendChild(bubble);
-    messagesDiv.appendChild(row);
-    messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    thinkingRow = row;
-  }
-
-  function removeThinking() {
-    if (thinkingRow) { thinkingRow.remove(); thinkingRow = null; }
-  }
-
-  function sendMessage() {
-    const message = userInput.value.trim();
-    if (!message || socket.readyState !== WebSocket.OPEN || awaitingReply) return;
-
-    appendMessage('user', message);
-    socket.send(message);
-
-    userInput.value = '';
-    userInput.style.height = 'auto';
-    sendBtn.disabled = true;
-    awaitingReply = true;
-    showThinking();
-    userInput.focus();
-  }
-
-  userInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
+            socket.send(message);
+            userInput.value = '';
+            userInput.focus();
+        }
     }
-  });
+
+    userInput.addEventListener("keyup", function(event) {
+        if (event.key === "Enter") {
+            sendMessage();
+        }
+    });
 </script>
 </body>
 </html>
